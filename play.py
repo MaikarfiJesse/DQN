@@ -17,10 +17,10 @@ def simulate():
             action, _states = model.predict(obs)
             obs, reward, done, info = env.step(action)
             env.render()
-            # Add a small delay to make rendering smooth
-            pygame.time.delay(100)
     except Exception as e:
         print(f"An error occurred: {e}")
+    finally:
+        env.close()
 
 if __name__ == "__main__":
     simulate()
