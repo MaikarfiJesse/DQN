@@ -1,8 +1,9 @@
 import gym
 from stable_baselines3 import DQN
 from stable_baselines3.common.vec_env import DummyVecEnv
+from irrigation_env import IrrigationEnv
+import numpy as np
 import tensorflow as tf
-# from irrigation_env import IrrigationEnv
 
 def main():
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
