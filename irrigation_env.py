@@ -78,23 +78,31 @@ class IrrigationEnv(gym.Env):
 
     def render(self, mode='human'):
         if mode == 'human':
-            # Fill the screen with white
-            self.screen.fill((255, 255, 255))
+            running = True
+            while running:
+                # Fill the screen with white
+                self.screen.fill((255, 255, 255))
 
-            # Draw the grid
-            for i in range(self.field_size):
-                for j in range(self.field_size):
-                    rect = pygame.Rect(i * self.cell_size, j * self.cell_size, self.cell_size, self.cell_size)
-                    if (i, j) == self.agent_pos:
-                        pygame.draw.rect(self.screen, (0, 255, 0), rect)  # Agent in green
-                    elif (i, j) == self.water_source:
-                        pygame.draw.rect(self.screen, (0, 0, 255), rect)  # Water source in blue
-                    elif (i, j) in self.dry_areas:
-                        pygame.draw.rect(self.screen, (255, 255, 0), rect)  # Dry area in yellow
-                    elif (i, j) in self.obstacles:
-                        pygame.draw.rect(self.screen, (255, 0, 0), rect)  # Obstacle in red
-                    else:
-                        pygame.draw.rect(self.screen, (200, 200, 200), rect)  # Empty cell in light gray
-                    pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)  # Draw grid lines
+                # Draw the grid
+                for i in range(self.field_size):
+                    for j in range(self.field_size):
+                        rect = pygame.Rect(i * self.cell_size, j * self.cell_size, self.cell_size, self.cell_size)
+                        if (i, j) == self.agent_pos:
+                            pygame.draw.rect(self.screen, (0, 255, 0), rect)  # Agent in green
+                        elif (i, j) == self.water_source:
+                            pygame.draw.rect(self.screen, (0, 0, 255), rect)  # Water source in blue
+                        elif (i, j) in self.dry_areas:
+                            pygame.draw.rect(self.screen, (255, 255, 0), rect)  # Dry area in yellow
+                        elif (i, j) in self.obstacles:
+                            pygame.draw.rect(self.screen, (255, 0, 0), rect)  # Obstacle in red
+                        else:
+                            pygame.draw.rect(self.screen, (200, 200, 200), rect)  # Empty cell in light gray
+                        pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)  # Draw grid lines
 
-            pygame.display.flip()
+                pygame.display.flip()
+
+                # Handle events
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        running = False
