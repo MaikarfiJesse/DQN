@@ -3,27 +3,19 @@ from stable_baselines3 import DQN
 from irrigation_env import IrrigationEnv
 
 def simulate():
+    # Load the trained model
+    model = DQN.load("dqn_irrigation")
+
+    # Initialize the environment
     env = IrrigationEnv(size=10)
+
+    # Simulate irrigation
     obs = env.reset()
     done = False
-    
     while not done:
-        # Render the environment (text-based)
-        env.render()
-        
-        # Sample a random action
-        action = env.action_space.sample()
-        
-        # Take a step in the environment
+        action, _states = model.predict(obs)
         obs, reward, done, info = env.step(action)
-
-        # Add a delay for better visualization (optional)
-        import time
-        time.sleep(1)
-    
-    # Final render
-    env.render()
-    env.close()
+        env.render()
 
 if __name__ == "__main__":
     simulate()
