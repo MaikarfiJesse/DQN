@@ -1,6 +1,6 @@
 import gym
 from stable_baselines3 import DQN
-# from irrigation_env import IrrigationEnv
+from irrigation_env import IrrigationEnv
 
 def simulate():
     # Load the trained model
