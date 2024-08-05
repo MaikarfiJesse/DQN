@@ -6,10 +6,6 @@ This project involves training a reinforcement learning agent using Deep Q-Learn
 
 ## Setup Instructions
 
-    Clone the repository:
-
-    bash
-
 git clone https://github.com/MaikarfiJesse/DQN.git
 
 Install dependencies: pip install -r requirements.txt
