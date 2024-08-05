@@ -1,31 +1,48 @@
-import numpy as np
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten
-from tensorflow.keras.optimizers import Adam
-from rl.agents import DQNAgent
-from rl.policy import EpsGreedyQPolicy
-from rl.memory import SequentialMemory
-from irrigation_env import IrrigationEnv
+import gym
+from stable_baselines3 import DQN
+from stable_baselines3.common.vec_env import DummyVecEnv
+import tensorflow as tf
+# from irrigation_env import IrrigationEnv
 
-env = IrrigationEnv()
+def main():
+    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
-def build_model(states, actions):
-    model = Sequential()
-    model.add(Flatten(input_shape=(1,) + states))
-    model.add(Dense(24, activation='relu'))
-    model.add(Dense(24, activation='relu'))
-    model.add(Dense(actions, activation='linear'))
-    return model
+    # Initialize the environment with no rendering
+    env = DummyVecEnv([lambda: IrrigationEnv(size=10)])
+    print("Environment initialized successfully.")
 
-model = build_model(env.observation_space.shape, env.action_space.n)
+    # Define the model
+    model = DQN(
+        policy='MlpPolicy',
+        env=env,
+        verbose=1,
+        learning_rate=1e-3,
+        buffer_size=10000,
+        learning_starts=1000,
+        batch_size=64,
+        tau=1.0,
+        gamma=0.99,
+        train_freq=4,
+        target_update_interval=1000,
+        exploration_fraction=0.2,
+        exploration_final_eps=0.05,
+        max_grad_norm=10,
+    )
 
-memory = SequentialMemory(limit=50000, window_length=1)
-policy = EpsGreedyQPolicy()
-dqn = DQNAgent(model=model, nb_actions=env.action_space.n, memory=memory, nb_steps_warmup=10,
-               target_model_update=1e-2, policy=policy)
-dqn.compile(Adam(lr=1e-3), metrics=['mae'])
+    # Training parameters
+    total_episodes = 50  # Number of episodes to train
+    total_timesteps_per_episode = 1000  # Increased timesteps per episode
 
-dqn.fit(env, nb_steps=50000, visualize=False, verbose=1)
+    for episode in range(total_episodes):
+        print(f"Starting training episode {episode + 1}...")
+        model.learn(total_timesteps=total_timesteps_per_episode)
+        print(f"Training episode {episode + 1} completed.")
 
-dqn.save_weights('irrigation_weights.h5f', overwrite=True)
-model.save('irrigation_model.h5')
+    # Save the model
+    model.save("dqn_irrigation")
+
+    # Close the environment
+    env.close()
+
+if __name__ == "__main__":
+    main()
