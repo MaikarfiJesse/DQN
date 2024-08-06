@@ -9,6 +9,7 @@ import numpy as np
 COLOR_WATER_SOURCE = (0, 0, 255)
 COLOR_DRY_AREA = (255, 255, 0)
 COLOR_OBSTACLE = (255, 0, 0)
+COLOR_RESTRICTED = (255, 0, 255)
 COLOR_AGENT = (0, 255, 0)
 COLOR_EMPTY = (200, 200, 200)
 
@@ -27,6 +28,8 @@ def render_env(env, screen, block_size=40):
             elif obs[i, j] == 3:
                 color = COLOR_OBSTACLE
             elif obs[i, j] == 4:
+                color = COLOR_RESTRICTED
+            elif obs[i, j] == 5:
                 color = COLOR_AGENT
             pygame.draw.rect(screen, color, pygame.Rect(j * block_size, i * block_size, block_size, block_size))
     pygame.display.flip()
