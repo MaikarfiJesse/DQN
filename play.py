@@ -3,7 +3,6 @@ from stable_baselines3 import DQN
 from irrigation_env import IrrigationEnv
 import pygame
 import time
-import numpy as np
 
 # Define colors
 COLOR_WATER_SOURCE = (0, 0, 255)
