@@ -1,7 +1,8 @@
 import gym
 from gym import spaces
 import numpy as np
-import pygame 
+import pygame  # Ensure this import is present
+
 class IrrigationEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
 
