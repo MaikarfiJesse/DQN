@@ -2,15 +2,16 @@
 import gym
 from stable_baselines3 import DQN
 from stable_baselines3.common.vec_env import DummyVecEnv
-from irrigation_env import IrrigationEnv  # Import your custom environment
+from irrigation_env import IrrigationEnv  # Adjust import if necessary
+import numpy as np
 import time
 
 def play_simulation():
     # Initialize the environment
-    env = DummyVecEnv([lambda: IrrigationEnv(size=10, render_mode="human")])  # Adjust size and render_mode as needed
+    env = DummyVecEnv([lambda: IrrigationEnv(render_mode="human", size=5)])
 
     # Load the trained model
-    model = DQN.load("dqn_irrigation")  # Ensure this matches your trained model filename
+    model = DQN.load("dqn_irrigation")
 
     # Reset the environment
     obs = env.reset()
@@ -24,6 +25,9 @@ def play_simulation():
             # Restart the environment if done
             obs = env.reset()
             done = False
+
+        # Flatten the observation array before prediction
+        obs = np.squeeze(obs)  # Flatten the observation to match the expected shape
 
         # Predict the action based on the current observation
         action, _ = model.predict(obs, deterministic=True)
