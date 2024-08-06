@@ -1,104 +1,59 @@
 import gym
 from gym import spaces
-from gym.envs.registration import register
 import numpy as np
-import pygame
 
 class IrrigationEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
 
-    def __init__(self, render_mode=None, size=10):
+    def __init__(self, render_mode=None, size=5):
         super().__init__()
         self.size = size
-        self.window_size = 600  # Adjust the window size for your field
-        self.max_steps = 100  # Adjust the maximum steps as needed
+        self.window_size = 800
+        self.max_steps = 100
 
-        # Observation space updated to (4,) to match the returned observation shape
-        self.observation_space = spaces.Box(low=0, high=size - 1, shape=(4,), dtype=int)
-        self.action_space = spaces.Discrete(4)
-        self._action_to_direction = {
-            0: np.array([1, 0]),   # right
-            1: np.array([0, 1]),   # up
-            2: np.array([-1, 0]),  # left
-            3: np.array([0, -1])   # down
-        }
+        self.observation_space = spaces.Box(low=0, high=1, shape=(size * size + 2,), dtype=np.float32)
+        self.action_space = spaces.Discrete(4)  # Actions: 0: No Irrigation, 1: Low, 2: Medium, 3: High
 
-        assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
         self.window = None
         self.clock = None
 
-        self.obstacles = []
-        self.goal = None
-        self.current_reward = 0
-        self.starting_point = np.array([0, 0])
-        self.steps_taken = 0
+        self.reset()
 
-    def _get_obs(self):
-        return np.concatenate([self._agent_location, self._goal_location])
-
-    def _get_info(self):
-        return {"distance": np.linalg.norm(self._agent_location - self._goal_location, ord=1)}
-
-    def reset(self, seed=None, options=None):
-        super().reset(seed=seed)
-        self._agent_location = self.starting_point.copy()
-        self._goal_location = self.np_random.integers(
-            0, self.size, size=2, dtype=int)
-        while np.array_equal(self._goal_location, self._agent_location):
-            self._goal_location = self.np_random.integers(
-                0, self.size, size=2, dtype=int)
-
-        self.obstacles = [
-            (np.array([0, 2]), 'Water Source'),
-            (np.array([3, 2]), 'Dry Area'),
-            (np.array([3, 4]), 'Obstacle'),
-            (np.array([4, 1]), 'Restricted'),
-            (np.array([1, 4]), 'Emergency'),
-            (np.array([1, 4]), 'Nurse'),
-        ]
-
-        self.current_reward = 0
-        self.steps_taken = 0
-
-        observation = self._get_obs()
-        info = self._get_info()
+    def reset(self):
+        self.state = np.zeros(self.size * self.size)
+        self.water_level = 0.5  # Example: initial water level
+        self.step_count = 0
 
         if self.render_mode == "human":
             self._render_frame()
 
-        return observation, info
+        return self._get_obs()
 
     def step(self, action):
-        direction = self._action_to_direction[action]
-        new_location = np.clip(self._agent_location +
-                               direction, 0, self.size - 1)
-
-        reward = 0
-
-        if new_location.tolist() not in [o[0].tolist() for o in self.obstacles]:
-            self._agent_location = new_location
-        else:
-            self._agent_location = self.starting_point
-            reward = -10
-
-        terminated = np.array_equal(self._agent_location, self._goal_location)
-        if terminated and self.steps_taken > 10:
-            reward = 10
-            self._agent_location = self._goal_location
-
-        self.current_reward += reward
-        self.steps_taken += 1
-
-        done = terminated or self.steps_taken >= self.max_steps
-
-        observation = self._get_obs()
-        info = self._get_info()
-
+        # Example: Adjust water level based on action
+        if action == 1:
+            self.water_level = min(1.0, self.water_level + 0.1)
+        elif action == 2:
+            self.water_level = min(1.0, self.water_level + 0.3)
+        elif action == 3:
+            self.water_level = min(1.0, self.water_level + 0.5)
+        
+        reward = self._compute_reward()
+        self.step_count += 1
+        done = self.step_count >= self.max_steps
+        
         if self.render_mode == "human":
             self._render_frame()
 
-        return observation, reward, done, False, info
+        return self._get_obs(), reward, done, {}
+
+    def _get_obs(self):
+        return np.concatenate([self.state, [self.water_level]])
+
+    def _compute_reward(self):
+        # Example reward function: maximize water usage efficiency
+        return -np.abs(self.water_level - 0.5)  # Reward for being close to a desired water level
 
     def render(self):
         if self.render_mode == "rgb_array":
@@ -106,75 +61,18 @@ class IrrigationEnv(gym.Env):
 
     def _render_frame(self):
         if self.window is None and self.render_mode == "human":
+            import pygame
             pygame.init()
             pygame.display.init()
-            self.window = pygame.display.set_mode(
-                (self.window_size, self.window_size))
+            self.window = pygame.display.set_mode((self.window_size, self.window_size))
         if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
 
         canvas = pygame.Surface((self.window_size, self.window_size))
         canvas.fill((255, 255, 255))
-        pix_square_size = self.window_size / self.size
 
-        for obstacle, label in self.obstacles:
-            pygame.draw.rect(
-                canvas,
-                (0, 0, 0),
-                pygame.Rect(
-                    pix_square_size * obstacle,
-                    (pix_square_size, pix_square_size),
-                ),
-            )
-            font = pygame.font.SysFont(None, 24)
-            text = font.render(label, True, (255, 255, 255))
-            canvas.blit(text, (pix_square_size *
-                        obstacle[0] + 5, pix_square_size * obstacle[1] + 5))
-
-        pygame.draw.rect(
-            canvas,
-            (255, 0, 0),
-            pygame.Rect(
-                pix_square_size * self._goal_location,
-                (pix_square_size, pix_square_size),
-            ),
-        )
-        font = pygame.font.SysFont(None, 24)
-        text = font.render('Goal', True, (255, 255, 255))
-        canvas.blit(text, (pix_square_size *
-                    self._goal_location[0] + 5, pix_square_size * self._goal_location[1] + 5))
-
-        pygame.draw.circle(
-            canvas,
-            (0, 0, 255),
-            (self._agent_location + 0.5) * pix_square_size,
-            pix_square_size / 3,
-        )
-        font = pygame.font.SysFont(None, 16)
-        text = font.render('Agent', True, (255, 255, 255))
-        canvas.blit(text, ((self._agent_location + 0.5) * pix_square_size - (pix_square_size / 6),
-                    (self._agent_location + 0.5) * pix_square_size - (pix_square_size / 6)))
-
-        for x in range(self.size + 1):
-            pygame.draw.line(
-                canvas,
-                0,
-                (0, pix_square_size * x),
-                (self.window_size, pix_square_size * x),
-                width=3,
-            )
-            pygame.draw.line(
-                canvas,
-                0,
-                (pix_square_size * x, 0),
-                (pix_square_size * x, self.window_size),
-                width=3,
-            )
-
-        font = pygame.font.SysFont(None, 20)
-        reward_text = font.render(
-            f'Reward: {self.current_reward}', True, (0, 0, 0))
-        canvas.blit(reward_text, (5, self.window_size - 25))
+        # Draw irrigation state
+        pygame.draw.rect(canvas, (0, 0, 255), (self.window_size * self.water_level, self.window_size * 0.5, 50, 50))
 
         if self.render_mode == "human":
             self.window.blit(canvas, canvas.get_rect())
@@ -182,15 +80,11 @@ class IrrigationEnv(gym.Env):
             pygame.display.update()
             self.clock.tick(self.metadata["render_fps"])
         else:
+            import pygame.surfarray
             return np.transpose(np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2))
 
     def close(self):
         if self.window is not None:
+            import pygame
             pygame.display.quit()
             pygame.quit()
-
-register(
-    id='gym_examples/IrrigationEnv-v0',
-    entry_point='irrigation_env:IrrigationEnv',
-    max_episode_steps=1000,
-)
