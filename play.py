@@ -2,7 +2,7 @@ import gym
 from stable_baselines3 import DQN
 import pygame
 import time
-from irrigation_env import IrrigationEnv  # Make sure this is correctly imported
+from irrigation_env import IrrigationEnv  # Ensure this import path is correct
 
 # Define colors
 COLOR_WATER_SOURCE = (0, 0, 255)
@@ -14,7 +14,7 @@ COLOR_TEXT = (0, 0, 0)
 
 def render_env(env, screen, font, block_size=60):
     # Get the observation
-    obs = env._get_obs()
+    obs = env._get_observation()
     
     for i in range(env.size):
         for j in range(env.size):
@@ -46,21 +46,19 @@ def render_env(env, screen, font, block_size=60):
     
     pygame.display.flip()
 
-def move_agent_sweep(env, model):
+def move_agent_sweep(env):
     obs = env.reset()
     done = False
     action_sequence = []
 
-    # Generate a sweep pattern action sequence
+    # Generate a sweeping pattern action sequence
     for i in range(env.size):
         if i % 2 == 0:  # Move right
-            for _ in range(env.size - 1):
-                action_sequence.append(1)  # Right
+            action_sequence.extend([1] * (env.size - 1))
         else:  # Move left
-            for _ in range(env.size - 1):
-                action_sequence.append(3)  # Left
+            action_sequence.extend([3] * (env.size - 1))
         if i != env.size - 1:
-            action_sequence.append(2)  # Down
+            action_sequence.append(2)  # Move down
 
     # Repeat the pattern to cover the time duration
     return action_sequence * 20
@@ -83,7 +81,7 @@ def play_simulation():
     model = DQN.load("dqn_irrigation")
     
     # Generate action sequence
-    action_sequence = move_agent_sweep(env, model)
+    action_sequence = move_agent_sweep(env)
 
     # Reset the environment
     obs = env.reset()
