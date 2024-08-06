@@ -65,6 +65,9 @@ def play_simulation():
     total_reward = 0
     start_time = time.time()
     max_time = 300  # 5 minutes in seconds
+    
+    movement_pattern = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Up, Right, Down, Left
+    pattern_index = 0
 
     while (time.time() - start_time) < max_time:
         if done:
@@ -77,7 +80,7 @@ def play_simulation():
                 pygame.quit()
                 return
 
-        # Predict the action based on the current observation
+        # Determine the next action based on the movement pattern
         action, _ = model.predict(obs, deterministic=True)
         obs, reward, done, _ = env.step(action)
         
@@ -89,6 +92,22 @@ def play_simulation():
         
         # Delay to ensure smooth animation
         time.sleep(0.5)
+
+        # Move agent in a predefined pattern
+        if env.agent_pos[0] == 0 and env.agent_pos[1] < field_size - 1:
+            action = 3  # Right
+        elif env.agent_pos[1] == field_size - 1 and env.agent_pos[0] < field_size - 1:
+            action = 1  # Down
+        elif env.agent_pos[0] == field_size - 1 and env.agent_pos[1] > 0:
+            action = 2  # Left
+        elif env.agent_pos[1] == 0 and env.agent_pos[0] > 0:
+            action = 0  # Up
+
+        # Predict the next action based on the predefined movement pattern
+        obs, reward, done, _ = env.step(action)
+        total_reward += reward
+        render_env(env, screen, font, block_size)
+        time.sleep(0.1)  # Adjust the delay for smooth animation
 
     # Print results
     print(f"Total Reward: {total_reward}")
