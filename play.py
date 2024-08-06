@@ -14,10 +14,11 @@ COLOR_TEXT = (0, 0, 0)
 
 def render_env(env, screen, font, block_size=60):
     # Get the observation
-    obs = env._get_observation()
+    obs = env._get_observation()  # If this function does not exist, replace it with how you get the observation in your environment
+    field_size = env.size
     
-    for i in range(env.size):
-        for j in range(env.size):
+    for i in range(field_size):
+        for j in range(field_size):
             color = COLOR_EMPTY
             text = ""
             if obs[i, j] == 1:
@@ -75,7 +76,7 @@ def play_simulation():
     font = pygame.font.SysFont(None, 28)
     
     # Initialize the environment
-    env = IrrigationEnv(size=size, render_mode="human")
+    env = IrrigationEnv(size=size)
     
     # Load the trained model
     model = DQN.load("dqn_irrigation")
