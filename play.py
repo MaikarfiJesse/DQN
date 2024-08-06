@@ -18,6 +18,7 @@ def render_env(env, screen, font, total_reward, block_size=80):
     obs = env._get_observation()
     field_size = obs.shape[0]
     
+    # Draw the grid
     for i in range(field_size):
         for j in range(field_size):
             color = COLOR_EMPTY
@@ -36,15 +37,16 @@ def render_env(env, screen, font, total_reward, block_size=80):
                 text = "Farmer"
             pygame.draw.rect(screen, color, pygame.Rect(j * block_size, i * block_size, block_size, block_size))
             
-            # Render text
+            # Render text inside the grid cells
             if text:
                 text_surface = font.render(text, True, COLOR_TEXT)
                 text_rect = text_surface.get_rect(center=(j * block_size + block_size / 2, i * block_size + block_size / 2))
                 screen.blit(text_surface, text_rect)
-
-    # Render total reward
-    reward_text = f"Total Reward: {total_reward}"
-    reward_surface = font.render(reward_text, True, COLOR_TEXT)
+    
+    # Render total reward below the grid
+    reward_font = pygame.font.SysFont(None, 40)
+    reward_text = f"Total Reward: {total_reward:.2f}"
+    reward_surface = reward_font.render(reward_text, True, COLOR_TEXT)
     screen.blit(reward_surface, (10, field_size * block_size + 10))
     
     pygame.display.flip()
@@ -119,7 +121,7 @@ def play_simulation():
             obs = env.reset()
 
     # Print results
-    print(f"Total Reward: {total_reward}")
+    print(f"Total Reward: {total_reward:.2f}")
 
     # Close the environment
     pygame.quit()
