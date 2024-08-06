@@ -1,8 +1,7 @@
 import gym
 from gym import spaces
 import numpy as np
-import pygame  # Ensure this import is present
-
+import pygame 
 class IrrigationEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
 
@@ -32,7 +31,6 @@ class IrrigationEnv(gym.Env):
         return self._get_obs()
 
     def step(self, action):
-        # Example: Adjust water level based on action
         if action == 1:
             self.water_level = min(1.0, self.water_level + 0.1)
         elif action == 2:
@@ -53,8 +51,7 @@ class IrrigationEnv(gym.Env):
         return np.concatenate([self.state, [self.water_level]])
 
     def _compute_reward(self):
-        # Example reward function: maximize water usage efficiency
-        return -np.abs(self.water_level - 0.5)  # Reward for being close to a desired water level
+        return -np.abs(self.water_level - 0.5)
 
     def render(self):
         if self.render_mode == "rgb_array":
@@ -62,7 +59,7 @@ class IrrigationEnv(gym.Env):
 
     def _render_frame(self):
         if self.window is None and self.render_mode == "human":
-            pygame.init()
+            pygame.init()  # Initialize pygame here
             pygame.display.init()
             self.window = pygame.display.set_mode((self.window_size, self.window_size))
         if self.clock is None and self.render_mode == "human":
@@ -71,7 +68,6 @@ class IrrigationEnv(gym.Env):
         canvas = pygame.Surface((self.window_size, self.window_size))
         canvas.fill((255, 255, 255))
 
-        # Draw irrigation state
         pygame.draw.rect(canvas, (0, 0, 255), (self.window_size * self.water_level, self.window_size * 0.5, 50, 50))
 
         if self.render_mode == "human":
