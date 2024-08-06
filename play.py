@@ -1,9 +1,8 @@
 import gym
-import numpy as np
 from stable_baselines3 import DQN
-from irrigation_env import IrrigationEnv
 import pygame
 import time
+from irrigation_env import IrrigationEnv  # Make sure this is correctly imported
 
 # Define colors
 COLOR_WATER_SOURCE = (0, 0, 255)
@@ -13,14 +12,12 @@ COLOR_AGENT = (0, 255, 0)
 COLOR_EMPTY = (200, 200, 200)
 COLOR_TEXT = (0, 0, 0)
 
-def render_env(env, screen, font, total_reward, block_size=80):
+def render_env(env, screen, font, block_size=60):
     # Get the observation
-    obs = env._get_observation()
-    field_size = obs.shape[0]
+    obs = env._get_obs()
     
-    # Draw the grid
-    for i in range(field_size):
-        for j in range(field_size):
+    for i in range(env.size):
+        for j in range(env.size):
             color = COLOR_EMPTY
             text = ""
             if obs[i, j] == 1:
@@ -37,17 +34,15 @@ def render_env(env, screen, font, total_reward, block_size=80):
                 text = "Farmer"
             pygame.draw.rect(screen, color, pygame.Rect(j * block_size, i * block_size, block_size, block_size))
             
-            # Render text inside the grid cells
+            # Render text
             if text:
                 text_surface = font.render(text, True, COLOR_TEXT)
                 text_rect = text_surface.get_rect(center=(j * block_size + block_size / 2, i * block_size + block_size / 2))
                 screen.blit(text_surface, text_rect)
     
-    # Render total reward below the grid
-    reward_font = pygame.font.SysFont(None, 40)
-    reward_text = f"Total Reward: {total_reward:.2f}"
-    reward_surface = reward_font.render(reward_text, True, COLOR_TEXT)
-    screen.blit(reward_surface, (10, field_size * block_size + 10))
+    # Display total reward
+    reward_text = font.render(f'Total Reward: {env.current_reward:.2f}', True, COLOR_TEXT)
+    screen.blit(reward_text, (10, env.size * block_size + 10))
     
     pygame.display.flip()
 
@@ -57,15 +52,15 @@ def move_agent_sweep(env, model):
     action_sequence = []
 
     # Generate a sweep pattern action sequence
-    for i in range(env.field_size):
+    for i in range(env.size):
         if i % 2 == 0:  # Move right
-            for _ in range(env.field_size - 1):
-                action_sequence.append(3)  # Right
+            for _ in range(env.size - 1):
+                action_sequence.append(1)  # Right
         else:  # Move left
-            for _ in range(env.field_size - 1):
-                action_sequence.append(2)  # Left
-        if i != env.field_size - 1:
-            action_sequence.append(1)  # Down
+            for _ in range(env.size - 1):
+                action_sequence.append(3)  # Left
+        if i != env.size - 1:
+            action_sequence.append(2)  # Down
 
     # Repeat the pattern to cover the time duration
     return action_sequence * 20
@@ -73,16 +68,16 @@ def move_agent_sweep(env, model):
 def play_simulation():
     # Initialize pygame
     pygame.init()
-    block_size = 80
-    field_size = 10  # Adjust according to your environment
-    screen_size = (field_size * block_size, field_size * block_size + 50)
+    block_size = 60
+    size = 10  # Adjust according to your environment
+    screen_size = (size * block_size, size * block_size + 50)
     screen = pygame.display.set_mode(screen_size)
     
     # Set font for text rendering
     font = pygame.font.SysFont(None, 28)
     
     # Initialize the environment
-    env = IrrigationEnv(size=field_size)
+    env = IrrigationEnv(size=size, render_mode="human")
     
     # Load the trained model
     model = DQN.load("dqn_irrigation")
@@ -106,13 +101,13 @@ def play_simulation():
                 return
 
         # Execute the action
-        obs, reward, done, _ = env.step(action)
+        obs, reward, done, info = env.step(action)
         
         # Accumulate reward
         total_reward += reward
         
         # Render the environment
-        render_env(env, screen, font, total_reward, block_size)
+        render_env(env, screen, font, block_size)
         
         # Delay to ensure smooth animation
         time.sleep(0.5)
@@ -121,7 +116,7 @@ def play_simulation():
             obs = env.reset()
 
     # Print results
-    print(f"Total Reward: {total_reward:.2f}")
+    print(f"Total Reward: {total_reward}")
 
     # Close the environment
     pygame.quit()
