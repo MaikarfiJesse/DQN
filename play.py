@@ -1,4 +1,5 @@
 import gym
+import numpy as np
 from stable_baselines3 import DQN
 from irrigation_env import IrrigationEnv
 import pygame
@@ -42,6 +43,25 @@ def render_env(env, screen, font, block_size=60):
                 screen.blit(text_surface, text_rect)
     pygame.display.flip()
 
+def move_agent_sweep(env, model):
+    obs = env.reset()
+    done = False
+    action_sequence = []
+
+    # Generate a sweep pattern action sequence
+    for i in range(env.field_size):
+        if i % 2 == 0:  # Move right
+            for _ in range(env.field_size - 1):
+                action_sequence.append(3)  # Right
+        else:  # Move left
+            for _ in range(env.field_size - 1):
+                action_sequence.append(2)  # Left
+        if i != env.field_size - 1:
+            action_sequence.append(1)  # Down
+
+    # Repeat the pattern to cover the time duration
+    return action_sequence * 20
+
 def play_simulation():
     # Initialize pygame
     pygame.init()
@@ -59,29 +79,25 @@ def play_simulation():
     # Load the trained model
     model = DQN.load("dqn_irrigation")
     
+    # Generate action sequence
+    action_sequence = move_agent_sweep(env, model)
+
     # Reset the environment
     obs = env.reset()
-    done = False
     total_reward = 0
     start_time = time.time()
     max_time = 300  # 5 minutes in seconds
-    
-    movement_pattern = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Up, Right, Down, Left
-    pattern_index = 0
 
-    while (time.time() - start_time) < max_time:
-        if done:
-            # Restart the environment if done
-            obs = env.reset()
-            done = False
+    for action in action_sequence:
+        if (time.time() - start_time) >= max_time:
+            break
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
 
-        # Determine the next action based on the movement pattern
-        action, _ = model.predict(obs, deterministic=True)
+        # Execute the action
         obs, reward, done, _ = env.step(action)
         
         # Accumulate reward
@@ -93,25 +109,11 @@ def play_simulation():
         # Delay to ensure smooth animation
         time.sleep(0.5)
 
-        # Move agent in a predefined pattern
-        if env.agent_pos[0] == 0 and env.agent_pos[1] < field_size - 1:
-            action = 3  # Right
-        elif env.agent_pos[1] == field_size - 1 and env.agent_pos[0] < field_size - 1:
-            action = 1  # Down
-        elif env.agent_pos[0] == field_size - 1 and env.agent_pos[1] > 0:
-            action = 2  # Left
-        elif env.agent_pos[1] == 0 and env.agent_pos[0] > 0:
-            action = 0  # Up
-
-        # Predict the next action based on the predefined movement pattern
-        obs, reward, done, _ = env.step(action)
-        total_reward += reward
-        render_env(env, screen, font, block_size)
-        time.sleep(0.1)  # Adjust the delay for smooth animation
+        if done:
+            obs = env.reset()
 
     # Print results
     print(f"Total Reward: {total_reward}")
-    print(f"Simulation Done: {done}")
 
     # Close the environment
     pygame.quit()
