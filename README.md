@@ -24,12 +24,7 @@ python test_env.py
 Run the simulation with visualization:
 
 
-    streamlit run app.py
+    python play.py
 
-Video Demonstration
-Introduction
+Watch the simulation video- https://drive.google.com/file/d/19lMmjMuFFyyTfPwDvIdo-XktYH3GYjPC/view?usp=sharing
 
-Watch the introduction video.
-Simulation Video
-
-Watch the simulation video.
