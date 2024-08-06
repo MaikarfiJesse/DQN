@@ -4,7 +4,6 @@ from stable_baselines3 import DQN
 from irrigation_env import IrrigationEnv
 import pygame
 import time
-import random
 
 # Define colors
 COLOR_WATER_SOURCE = (0, 0, 255)
@@ -44,17 +43,24 @@ def render_env(env, screen, font, block_size=60):
                 screen.blit(text_surface, text_rect)
     pygame.display.flip()
 
-def generate_varied_actions(env, duration=300, interval=0.5):
-    actions = []
-    start_time = time.time()
-    current_time = 0
+def move_agent_sweep(env, model):
+    obs = env.reset()
+    done = False
+    action_sequence = []
 
-    while current_time < duration:
-        current_time = time.time() - start_time
-        actions.append(random.choice([0, 1, 2, 3]))  # Randomly choose between Up, Down, Left, Right
-        time.sleep(interval)
+    # Generate a sweep pattern action sequence
+    for i in range(env.field_size):
+        if i % 2 == 0:  # Move right
+            for _ in range(env.field_size - 1):
+                action_sequence.append(3)  # Right
+        else:  # Move left
+            for _ in range(env.field_size - 1):
+                action_sequence.append(2)  # Left
+        if i != env.field_size - 1:
+            action_sequence.append(1)  # Down
 
-    return actions
+    # Repeat the pattern to cover the time duration
+    return action_sequence * 20
 
 def play_simulation():
     # Initialize pygame
@@ -74,7 +80,7 @@ def play_simulation():
     model = DQN.load("dqn_irrigation")
     
     # Generate action sequence
-    action_sequence = generate_varied_actions(env)
+    action_sequence = move_agent_sweep(env, model)
 
     # Reset the environment
     obs = env.reset()
