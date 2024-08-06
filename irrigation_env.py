@@ -1,86 +1,86 @@
 import gym
-from gym import spaces
 import numpy as np
-import pygame  # Ensure pygame is imported here
+from gym import spaces
 
 class IrrigationEnv(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
+    def __init__(self, size=10):
+        super(IrrigationEnv, self).__init__()
+        
+        # Define the size of the field
+        self.field_size = size
 
-    def __init__(self, render_mode=None, size=5):
-        super().__init__()
-        self.size = size
-        self.window_size = 800
-        self.max_steps = 100
-
-        self.observation_space = spaces.Box(low=0, high=1, shape=(size * size + 2,), dtype=np.float32)
-        self.action_space = spaces.Discrete(4)  # Actions: 0: No Irrigation, 1: Low, 2: Medium, 3: High
-
-        self.render_mode = render_mode
-        self.window = None
-        self.clock = None
-
-        self.reset()
+        # Define action and observation space
+        self.action_space = spaces.Discrete(4)  # Actions: Up, Down, Left, Right
+        self.observation_space = spaces.Box(low=0, high=1, shape=(self.field_size, self.field_size), dtype=np.float32)
+        
+        # Define irrigation goals and obstacles
+        self.water_source = (0, 0)
+        self.dry_areas = [(2, 2), (5, 5), (8, 8)]
+        self.obstacles = [(3, 3), (6, 6)]
+        
+        # Initialize agent position
+        self.agent_pos = None
+        
+        # Set maximum steps
+        self.max_steps = 200
+        self.current_step = 0
 
     def reset(self):
-        self.state = np.zeros(self.size * self.size)
-        self.water_level = 0.5  # Example: initial water level
-        self.step_count = 0
-
-        if self.render_mode == "human":
-            self._render_frame()
-
-        return self._get_obs()
+        self.agent_pos = (np.random.randint(0, self.field_size), np.random.randint(0, self.field_size))
+        self.current_step = 0
+        return self._get_observation()
 
     def step(self, action):
-        if action == 1:
-            self.water_level = min(1.0, self.water_level + 0.1)
-        elif action == 2:
-            self.water_level = min(1.0, self.water_level + 0.3)
-        elif action == 3:
-            self.water_level = min(1.0, self.water_level + 0.5)
+        self.current_step += 1
         
-        reward = self._compute_reward()
-        self.step_count += 1
-        done = self.step_count >= self.max_steps
+        # Move agent based on action
+        if action == 0:  # Up
+            self.agent_pos = (max(0, self.agent_pos[0] - 1), self.agent_pos[1])
+        elif action == 1:  # Down
+            self.agent_pos = (min(self.field_size - 1, self.agent_pos[0] + 1), self.agent_pos[1])
+        elif action == 2:  # Left
+            self.agent_pos = (self.agent_pos[0], max(0, self.agent_pos[1] - 1))
+        elif action == 3:  # Right
+            self.agent_pos = (self.agent_pos[0], min(self.field_size - 1, self.agent_pos[1] + 1))
         
-        if self.render_mode == "human":
-            self._render_frame()
+        # Check for termination conditions
+        done = False
+        reward = -0.1  # Small negative reward for each step
+        
+        if self.agent_pos in self.dry_areas:
+            reward = 10
+            done = True
+        elif self.agent_pos in self.obstacles:
+            reward = -5
+            done = True
+        elif self.current_step >= self.max_steps:
+            done = True
+        
+        return self._get_observation(), reward, done, {}
 
-        return self._get_obs(), reward, done, {}
+    def _get_observation(self):
+        obs = np.zeros((self.field_size, self.field_size), dtype=np.float32)
+        obs[self.water_source] = 1
+        for dry_area in self.dry_areas:
+            obs[dry_area] = 2
+        for obstacle in self.obstacles:
+            obs[obstacle] = 3
+        obs[self.agent_pos] = 4
+        return obs
 
-    def _get_obs(self):
-        return np.concatenate([self.state, [self.water_level]])
-
-    def _compute_reward(self):
-        return -np.abs(self.water_level - 0.5)
-
-    def render(self):
-        if self.render_mode == "rgb_array":
-            return self._render_frame()
-
-    def _render_frame(self):
-        if self.window is None and self.render_mode == "human":
-            pygame.init()  # Initialize pygame here
-            pygame.display.init()
-            self.window = pygame.display.set_mode((self.window_size, self.window_size))
-        if self.clock is None and self.render_mode == "human":
-            self.clock = pygame.time.Clock()
-
-        canvas = pygame.Surface((self.window_size, self.window_size))
-        canvas.fill((255, 255, 255))
-
-        pygame.draw.rect(canvas, (0, 0, 255), (self.window_size * self.water_level, self.window_size * 0.5, 50, 50))
-
-        if self.render_mode == "human":
-            self.window.blit(canvas, canvas.get_rect())
-            pygame.event.pump()
-            pygame.display.update()
-            self.clock.tick(self.metadata["render_fps"])
-        else:
-            import pygame.surfarray
-            return np.transpose(np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2))
-
-    def close(self):
-        if self.window is not None:
-            pygame.display.quit()
-            pygame.quit()
+    def render(self, mode='human'):
+        if mode == 'human':
+            for i in range(self.field_size):
+                for j in range(self.field_size):
+                    if (i, j) == self.agent_pos:
+                        print('🌾', end=' ')
+                    elif (i, j) == self.water_source:
+                        print('💧', end=' ')
+                    elif (i, j) in self.dry_areas:
+                        print('🌵', end=' ')
+                    elif (i, j) in self.obstacles:
+                        print('🛑', end=' ')
+                    else:
+                        print('.', end=' ')
+                print()
+            print('\n')
