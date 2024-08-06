@@ -13,11 +13,10 @@ class IrrigationEnv(gym.Env):
         self.action_space = spaces.Discrete(4)  # Actions: Up, Down, Left, Right
         self.observation_space = spaces.Box(low=0, high=1, shape=(self.field_size, self.field_size), dtype=np.float32)
         
-        # Define irrigation goals, obstacles, and restricted areas
+        # Define irrigation goals and obstacles
         self.water_source = (0, 0)
         self.dry_areas = [(2, 2), (5, 5), (8, 8)]
         self.obstacles = [(3, 3), (6, 6)]
-        self.restricted_areas = [(1, 1), (4, 4)]  # New restricted areas
         
         # Initialize agent position
         self.agent_pos = None
@@ -44,18 +43,16 @@ class IrrigationEnv(gym.Env):
         elif action == 3:  # Right
             self.agent_pos = (self.agent_pos[0], min(self.field_size - 1, self.agent_pos[1] + 1))
         
-        # Check for termination conditions and rewards
+        # Check for termination conditions
         done = False
         reward = -0.1  # Small negative reward for each step
         
         if self.agent_pos in self.dry_areas:
-            reward = 10  # High reward for reaching a dry area
+            reward = 10
             done = True
         elif self.agent_pos in self.obstacles:
-            reward = -5  # Penalty for hitting an obstacle
+            reward = -5
             done = True
-        elif self.agent_pos in self.restricted_areas:
-            reward = -2  # Penalty for entering a restricted area
         elif self.current_step >= self.max_steps:
             done = True
         
@@ -68,9 +65,7 @@ class IrrigationEnv(gym.Env):
             obs[dry_area] = 2
         for obstacle in self.obstacles:
             obs[obstacle] = 3
-        for restricted_area in self.restricted_areas:
-            obs[restricted_area] = 4  # Different value for restricted areas
-        obs[self.agent_pos] = 5
+        obs[self.agent_pos] = 4
         return obs
 
     def render(self, mode='human'):
@@ -85,8 +80,6 @@ class IrrigationEnv(gym.Env):
                         print('🌵', end=' ')
                     elif (i, j) in self.obstacles:
                         print('🛑', end=' ')
-                    elif (i, j) in self.restricted_areas:
-                        print('🚫', end=' ')
                     else:
                         print('.', end=' ')
                 print()
