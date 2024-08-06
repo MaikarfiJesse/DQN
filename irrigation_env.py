@@ -13,8 +13,8 @@ class IrrigationEnv(gym.Env):
         self.window_size = 600  # Adjust the window size for your field
         self.max_steps = 100  # Adjust the maximum steps as needed
 
-        # Adjust observation space to match the grid size
-        self.observation_space = spaces.Box(low=0, high=size - 1, shape=(2,), dtype=int)
+        # Observation space updated to (4,) to match the returned observation shape
+        self.observation_space = spaces.Box(low=0, high=size - 1, shape=(4,), dtype=int)
         self.action_space = spaces.Discrete(4)
         self._action_to_direction = {
             0: np.array([1, 0]),   # right
