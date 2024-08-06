@@ -2,7 +2,7 @@ import gym
 from stable_baselines3 import DQN
 import pygame
 import time
-from irrigation_env import IrrigationEnv  # Ensure this import path is correct
+from irrigation_env import IrrigationEnv  # Make sure this is correctly imported
 
 # Define colors
 COLOR_WATER_SOURCE = (0, 0, 255)
@@ -14,11 +14,10 @@ COLOR_TEXT = (0, 0, 0)
 
 def render_env(env, screen, font, block_size=60):
     # Get the observation
-    obs = env._get_observation()  # If this function does not exist, replace it with how you get the observation in your environment
-    field_size = env.size
+    obs = env._get_obs()
     
-    for i in range(field_size):
-        for j in range(field_size):
+    for i in range(env.size):
+        for j in range(env.size):
             color = COLOR_EMPTY
             text = ""
             if obs[i, j] == 1:
@@ -47,19 +46,21 @@ def render_env(env, screen, font, block_size=60):
     
     pygame.display.flip()
 
-def move_agent_sweep(env):
+def move_agent_sweep(env, model):
     obs = env.reset()
     done = False
     action_sequence = []
 
-    # Generate a sweeping pattern action sequence
+    # Generate a sweep pattern action sequence
     for i in range(env.size):
         if i % 2 == 0:  # Move right
-            action_sequence.extend([1] * (env.size - 1))
+            for _ in range(env.size - 1):
+                action_sequence.append(1)  # Right
         else:  # Move left
-            action_sequence.extend([3] * (env.size - 1))
+            for _ in range(env.size - 1):
+                action_sequence.append(3)  # Left
         if i != env.size - 1:
-            action_sequence.append(2)  # Move down
+            action_sequence.append(2)  # Down
 
     # Repeat the pattern to cover the time duration
     return action_sequence * 20
@@ -76,13 +77,13 @@ def play_simulation():
     font = pygame.font.SysFont(None, 28)
     
     # Initialize the environment
-    env = IrrigationEnv(size=size)
+    env = IrrigationEnv(size=size, render_mode="human")
     
     # Load the trained model
     model = DQN.load("dqn_irrigation")
     
     # Generate action sequence
-    action_sequence = move_agent_sweep(env)
+    action_sequence = move_agent_sweep(env, model)
 
     # Reset the environment
     obs = env.reset()
