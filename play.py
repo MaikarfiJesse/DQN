@@ -13,7 +13,7 @@ COLOR_AGENT = (0, 255, 0)
 COLOR_EMPTY = (200, 200, 200)
 COLOR_TEXT = (0, 0, 0)
 
-def render_env(env, screen, font, block_size=80, reward=0):
+def render_env(env, screen, font, block_size=80):
     # Get the observation
     obs = env._get_observation()
     field_size = obs.shape[0]
@@ -42,10 +42,6 @@ def render_env(env, screen, font, block_size=80, reward=0):
                 text_rect = text_surface.get_rect(center=(j * block_size + block_size / 2, i * block_size + block_size / 2))
                 screen.blit(text_surface, text_rect)
     
-    # Display current reward
-    reward_text = font.render(f"Reward: {reward}", True, COLOR_TEXT)
-    screen.blit(reward_text, (10, field_size * block_size + 10))
-
     pygame.display.flip()
 
 def move_agent_sweep(env, model):
@@ -72,11 +68,11 @@ def play_simulation():
     pygame.init()
     block_size = 80
     field_size = 10  # Adjust according to your environment
-    screen_size = (field_size * block_size, field_size * block_size + 40)
+    screen_size = (field_size * block_size, field_size * block_size + 50)
     screen = pygame.display.set_mode(screen_size)
     
     # Set font for text rendering
-    font = pygame.font.SysFont(None, 36)
+    font = pygame.font.SysFont(None, 28)
     
     # Initialize the environment
     env = IrrigationEnv(size=field_size)
@@ -109,7 +105,14 @@ def play_simulation():
         total_reward += reward
         
         # Render the environment
-        render_env(env, screen, font, block_size, total_reward)
+        render_env(env, screen, font, block_size)
+        
+        # Render total reward
+        reward_text = f"Total Reward: {total_reward}"
+        reward_surface = font.render(reward_text, True, COLOR_TEXT)
+        screen.blit(reward_surface, (10, field_size * block_size + 10))
+        
+        pygame.display.flip()
         
         # Delay to ensure smooth animation
         time.sleep(0.5)
