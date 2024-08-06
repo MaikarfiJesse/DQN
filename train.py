@@ -1,49 +1,36 @@
-import gym
 from stable_baselines3 import DQN
 from stable_baselines3.common.vec_env import DummyVecEnv
 from irrigation_env import IrrigationEnv
-import numpy as np
-import tensorflow as tf
 
-def main():
-    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+# Create environment
+env = DummyVecEnv([lambda: IrrigationEnv()])
 
-    # Initialize the environment with no rendering
-    env = DummyVecEnv([lambda: IrrigationEnv(size=10)])
-    print("Environment initialized successfully.")
+# Define the model
+model = DQN("MlpPolicy", env, verbose=1)
 
-    # Define the model
-    model = DQN(
-        policy='MlpPolicy',
-        env=env,
-        verbose=1,
-        learning_rate=1e-3,
-        buffer_size=10000,
-        learning_starts=1000,
-        batch_size=64,
-        tau=1.0,
-        gamma=0.99,
-        train_freq=4,
-        target_update_interval=1000,
-        exploration_fraction=0.2,
-        exploration_final_eps=0.05,
-        max_grad_norm=10,
-    )
+# Train the model
+model.learn(total_timesteps=10000)
 
-    # Training parameters
-    total_episodes = 50  # Number of episodes to train
-    total_timesteps_per_episode = 1000  # Increased timesteps per episode
+# Save the model
+model.save("dqn_irrigation")
 
-    for episode in range(total_episodes):
-        print(f"Starting training episode {episode + 1}...")
-        model.learn(total_timesteps=total_timesteps_per_episode)
-        print(f"Training episode {episode + 1} completed.")
+# Load the model
+model = DQN.load("dqn_irrigation")
 
-    # Save the model
-    model.save("dqn_irrigation")
+# Play simulation
+def play_simulation():
+    env = DummyVecEnv([lambda: IrrigationEnv(render_mode="human")])
+    obs = env.reset()
+    done = False
+    total_reward = 0
 
-    # Close the environment
-    env.close()
+    while not done:
+        action, _ = model.predict(obs, deterministic=True)
+        obs, reward, done, _ = env.step(action)
+        total_reward += reward
+        env.render()
+
+    print(f"Total Reward: {total_reward}")
 
 if __name__ == "__main__":
-    main()
+    play_simulation()
