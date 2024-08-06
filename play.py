@@ -13,7 +13,7 @@ COLOR_AGENT = (0, 255, 0)
 COLOR_EMPTY = (200, 200, 200)
 COLOR_TEXT = (0, 0, 0)
 
-def render_env(env, screen, font, block_size=80):
+def render_env(env, screen, font, total_reward, block_size=80):
     # Get the observation
     obs = env._get_observation()
     field_size = obs.shape[0]
@@ -41,6 +41,11 @@ def render_env(env, screen, font, block_size=80):
                 text_surface = font.render(text, True, COLOR_TEXT)
                 text_rect = text_surface.get_rect(center=(j * block_size + block_size / 2, i * block_size + block_size / 2))
                 screen.blit(text_surface, text_rect)
+
+    # Render total reward
+    reward_text = f"Total Reward: {total_reward}"
+    reward_surface = font.render(reward_text, True, COLOR_TEXT)
+    screen.blit(reward_surface, (10, field_size * block_size + 10))
     
     pygame.display.flip()
 
@@ -105,14 +110,7 @@ def play_simulation():
         total_reward += reward
         
         # Render the environment
-        render_env(env, screen, font, block_size)
-        
-        # Render total reward
-        reward_text = f"Total Reward: {total_reward}"
-        reward_surface = font.render(reward_text, True, COLOR_TEXT)
-        screen.blit(reward_surface, (10, field_size * block_size + 10))
-        
-        pygame.display.flip()
+        render_env(env, screen, font, total_reward, block_size)
         
         # Delay to ensure smooth animation
         time.sleep(0.5)
