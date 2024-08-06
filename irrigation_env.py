@@ -1,6 +1,7 @@
 import gym
 from gym import spaces
 import numpy as np
+import pygame  # Ensure this import is present
 
 class IrrigationEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
@@ -61,7 +62,6 @@ class IrrigationEnv(gym.Env):
 
     def _render_frame(self):
         if self.window is None and self.render_mode == "human":
-            import pygame
             pygame.init()
             pygame.display.init()
             self.window = pygame.display.set_mode((self.window_size, self.window_size))
@@ -85,6 +85,5 @@ class IrrigationEnv(gym.Env):
 
     def close(self):
         if self.window is not None:
-            import pygame
             pygame.display.quit()
             pygame.quit()
